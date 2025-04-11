@@ -12,10 +12,14 @@ def get_csvs():
 
     return csvs
 
-def load_csv(filepath: Path):
+def load_csv(filepath: Path, sort_by: str=""):
     with filepath.open(newline="", encoding="utf-8") as file:
         reader = csv.DictReader(file)
-        return list(reader), reader.fieldnames
+        rows = list(reader)
+        headers = reader.fieldnames
+        if sort_by:
+            rows.sort(key=lambda x: x[sort_by])
+        return rows, headers
 
 def compare_csv_rows(rows1, rows2, key_fields=None):
     """Compare two lists of CSV rows."""
@@ -31,19 +35,20 @@ def compare_csv_rows(rows1, rows2, key_fields=None):
 
     for k in dict1.keys() & dict2.keys():
         if dict1[k] != dict2[k]:
-            modified.append(dict1[k], dict2[k])
+            modified.append((dict1[k], dict2[k]))
 
     return added, removed, modified
 
 def main():
     csv_files = get_csvs()
-    rows1, headers1 = load_csv(csv_files[0])
-    rows2, headers2 = load_csv(csv_files[1])
+    rows1, headers1 = load_csv(csv_files[0], "SASID")
+    rows2, headers2 = load_csv(csv_files[1], "SASID")
 
     if headers1 != headers2:
         raise Exception("CSV headers do not match!")
 
-    added, removed, modified = compare_csv_rows(rows1, rows2, key_fields=headers1)
+    # SASID: currently used for specific file
+    added, removed, modified = compare_csv_rows(rows1, rows2, key_fields=["SASID"])
 
     print(f"\n Added Rows: {len(added)}")
     for row in added:
